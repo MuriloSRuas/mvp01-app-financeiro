@@ -41,11 +41,14 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 │   ├── core/                 # regras puras
 │   │   ├── dinheiro.py       # parse/formatação pt-BR, arredondamento, validação
 │   │   ├── meta_economia.py  # RF01 e RF02
-│   │   └── antecipacao.py    # RF03 e RF04
+│   │   ├── antecipacao.py    # RF03 e RF04
+│   │   └── gastos.py         # lançamento, datas, totais, saldo, ranking (RF07, RF11)
 │   ├── reports/
-│   │   ├── markdown.py       # monta o texto dos relatórios (RF05)
+│   │   ├── markdown.py       # monta o texto dos relatórios (RF05, RF11)
 │   │   └── arquivo.py        # grava o .md em disco (RF06)
-│   ├── storage/              # SQLite (Fase 4)
+│   ├── storage/
+│   │   ├── caminhos.py       # onde fica o banco em cada sistema (único código por SO)
+│   │   └── repositorio.py    # SQLite: CRUD, filtro por mês, categorias
 │   └── ui/
 │       ├── app.py            # janela principal com abas
 │       ├── componentes.py    # peças comuns às abas de cálculo
@@ -54,7 +57,7 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 └── tests/                    # testes automatizados (pytest)
 ```
 
-Dois arquivos não estavam na estrutura do plano: `reports/arquivo.py` (separa "montar texto" de "gravar em disco") e `ui/componentes.py` (evita repetir nas duas abas o mesmo formulário + relatório + botão Salvar). Os arquivos de gastos chegam nas Fases 4 e 5.
+Três arquivos não estavam na estrutura do plano: `reports/arquivo.py` (separa "montar texto" de "gravar em disco"), `ui/componentes.py` (evita repetir nas duas abas o mesmo formulário + relatório + botão Salvar) e `storage/caminhos.py` (o "módulo isolado que decide o caminho por sistema operacional" pedido na seção 7). A aba de gastos chega na Fase 5.
 
 ## Decisões gerais
 
