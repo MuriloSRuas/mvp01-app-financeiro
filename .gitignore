@@ -1,0 +1,22 @@
+# Ambiente virtual
+.venv/
+
+# Arquivos gerados pelo Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Testes e cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Banco de dados local (nunca versionar dados pessoais)
+*.sqlite3
+*.db
+
+# Editores
+.vscode/
+.idea/
