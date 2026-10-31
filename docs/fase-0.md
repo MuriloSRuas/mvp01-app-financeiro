@@ -74,6 +74,6 @@ Resultado esperado do `pytest`: `1 passed`.
 - **Cobertura (coverage)**: porcentagem das linhas do código que foram executadas pelos testes. Mostra o que ficou sem teste.
 - **Branch (Git)**: uma linha paralela de desenvolvimento. Cada fase/feature fica na sua branch e só entra na `main` quando estiver pronta.
 
-## Pendências
+## Verificação
 
-- Os pacotes `python3.12-venv` e `python3-tk` precisam ser instalados com `sudo` (passo 1). Sem eles não dá para criar o `.venv` nem, a partir da Fase 3, abrir a janela.
+Depois de instalar `python3.12-venv` e `python3-tk`, o `.venv` foi criado, as dependências instaladas e o `pytest` retornou `1 passed` (Python 3.12.3, pytest 9.2.0, pytest-cov 7.1.0).
