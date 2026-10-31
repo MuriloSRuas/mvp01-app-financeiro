@@ -1,15 +1,19 @@
 """Ponto de entrada: permite rodar o programa com `python -m financas`.
 
-Por enquanto (Fase 0) só confirma que o pacote está instalado. A janela
-Tkinter entra na Fase 3; este arquivo vai apenas chamá-la, para que a
-lógica continue fora dele.
+Só abre a janela; toda a lógica fica nos outros módulos.
 """
 
-from financas import __version__
+import sys
 
 
 def main() -> None:
-    print(f"Finanças {__version__}: estrutura pronta. A interface chega na Fase 3.")
+    try:
+        from financas.ui.app import main as abrir_janela
+    except ModuleNotFoundError as erro:
+        if erro.name in ("tkinter", "_tkinter"):
+            sys.exit("O Tkinter não está instalado. No Ubuntu: sudo apt install python3-tk")
+        raise
+    abrir_janela()
 
 
 if __name__ == "__main__":
