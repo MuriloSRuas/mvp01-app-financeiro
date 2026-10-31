@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "financas"
+version = "0.1.0"
+description = "Calculadoras financeiras e controle de gastos, offline, com relatórios em Markdown."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Murilo Santos Ruas" }]
+# Sem dependências de execução: só a biblioteca padrão do Python.
+dependencies = []
+
+[project.optional-dependencies]
+# Ferramentas usadas apenas no desenvolvimento (testes e cobertura).
+dev = ["pytest>=8", "pytest-cov>=5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
