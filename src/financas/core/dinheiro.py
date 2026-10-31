@@ -178,3 +178,13 @@ def formatar_reais(valor: Decimal) -> str:
 def formatar_percentual(fracao: Decimal, casas: int = 2) -> str:
     """Formata uma fração como percentual: 0.005 -> "0,50%"."""
     return f"{formatar_numero(fracao * 100, casas)}%"
+
+
+def formatar_taxa(fracao: Decimal) -> str:
+    """Formata uma taxa com as casas que ela tiver: 0.02 -> "2%", 0.00125 -> "0,125%".
+
+    Diferente de `formatar_percentual`, não arredonda: nos "dados informados"
+    do relatório a taxa precisa aparecer exatamente como o usuário digitou.
+    """
+    percentual = (fracao * 100).normalize()
+    return f"{formatar_numero(percentual, _casas_decimais(percentual))}%"
