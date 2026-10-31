@@ -20,3 +20,4 @@ htmlcov/
 # Editores
 .vscode/
 .idea/
+.agents/
