@@ -53,12 +53,12 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 │       ├── app.py            # janela principal com abas
 │       ├── componentes.py    # peças comuns às abas de cálculo
 │       ├── aba_meta.py
-│       └── aba_antecipacao.py
+│       ├── aba_antecipacao.py
+│       └── aba_gastos.py
 └── tests/                    # testes automatizados (pytest)
 ```
 
-Três arquivos não estavam na estrutura do plano: `reports/arquivo.py` (separa "montar texto" de "gravar em disco"), `ui/componentes.py` (evita repetir nas duas abas o mesmo formulário + relatório + botão Salvar) e `storage/caminhos.py` (o "módulo isolado que decide o caminho por sistema operacional" pedido na seção 7). A aba de gastos chega na Fase 5.
-
+Três arquivos não estavam na estrutura do plano: `reports/arquivo.py` (separa "montar texto" de "gravar em disco"), `ui/componentes.py` (evita repetir nas duas abas o mesmo formulário + relatório + botão Salvar) e `storage/caminhos.py` (o "módulo isolado que decide o caminho por sistema operacional" pedido na seção 7).
 ## Decisões gerais
 
 - **Dinheiro em `Decimal`, nunca `float`.** `float` guarda números em binário e erra em contas simples (`0.1 + 0.2` dá `0.30000000000000004`). `Decimal` faz contas em base 10, como no caderno.
