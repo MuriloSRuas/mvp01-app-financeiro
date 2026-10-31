@@ -12,6 +12,7 @@ from financas.core.dinheiro import (
     formatar_numero,
     formatar_percentual,
     formatar_reais,
+    formatar_taxa,
     ler_decimal,
     ler_dinheiro,
     ler_inteiro,
@@ -150,6 +151,14 @@ def test_formatar_numero_com_outras_casas():
 def test_formatar_percentual():
     assert formatar_percentual(Decimal("0.005")) == "0,50%"
     assert formatar_percentual(Decimal("0.125"), 1) == "12,5%"
+
+
+@pytest.mark.parametrize(
+    "fracao, esperado",
+    [("0.02", "2%"), ("0.005", "0,5%"), ("0.00125", "0,125%"), ("0", "0%"), ("0.1", "10%"), ("12.5", "1.250%")],
+)
+def test_formatar_taxa_mostra_as_casas_que_a_taxa_tem(fracao, esperado):
+    assert formatar_taxa(Decimal(fracao)) == esperado
 
 
 def test_ida_e_volta():
