@@ -10,30 +10,53 @@ import pytest
 
 from financas.core.antecipacao import antecipar_com_valor, antecipar_quantidade
 from financas.core.meta_economia import calcular_aporte, calcular_meses
-from financas.reports.markdown import (
-    relatorio_antecipacao,
-    relatorio_aporte,
-    relatorio_meses,
-)
+from financas.reports import markdown
 
 MOMENTO = datetime(2026, 10, 31, 14, 5)
 SECOES = ["## Dados informados", "## Fórmula", "## Passo a passo", "## Resultado", "> [!warning]"]
 
 
-def _gerar_todos():
+def _compactar(texto):
+    """Tira os espaços de alinhamento das tabelas ("| a    | b |" -> "| a | b |"),
+    para os testes de conteúdo não dependerem da largura das colunas."""
+    return re.sub(r" {2,}\|", " |", texto)
+
+
+# Os testes de conteúdo usam estas versões compactadas; o teste de Markdown
+# válido usa o texto original (`_gerar_todos(compactar=False)`).
+def relatorio_meses(*args):
+    return _compactar(markdown.relatorio_meses(*args))
+
+
+def relatorio_aporte(*args):
+    return _compactar(markdown.relatorio_aporte(*args))
+
+
+def relatorio_antecipacao(*args):
+    return _compactar(markdown.relatorio_antecipacao(*args))
+
+
+def _gerar_todos(compactar=True):
+    textos = _gerar_originais()
+    if compactar:
+        return {nome: _compactar(texto) for nome, texto in textos.items()}
+    return textos
+
+
+def _gerar_originais():
     return {
-        "meses sem juros": relatorio_meses(calcular_meses(Decimal(10000), Decimal(200)), MOMENTO),
-        "meses com juros": relatorio_meses(
+        "meses sem juros": markdown.relatorio_meses(calcular_meses(Decimal(10000), Decimal(200)), MOMENTO),
+        "meses com juros": markdown.relatorio_meses(
             calcular_meses(Decimal(10000), Decimal(200), Decimal("0.005")), MOMENTO
         ),
-        "aporte sem juros": relatorio_aporte(calcular_aporte(Decimal(10000), 50), MOMENTO),
-        "aporte com juros": relatorio_aporte(
+        "aporte sem juros": markdown.relatorio_aporte(calcular_aporte(Decimal(10000), 50), MOMENTO),
+        "aporte com juros": markdown.relatorio_aporte(
             calcular_aporte(Decimal(10000), 45, Decimal("0.005")), MOMENTO
         ),
-        "antecipação": relatorio_antecipacao(
+        "antecipação": markdown.relatorio_antecipacao(
             antecipar_quantidade(Decimal(500), Decimal("0.02"), 10, 3), MOMENTO
         ),
-        "antecipação por valor": relatorio_antecipacao(
+        "antecipação por valor": markdown.relatorio_antecipacao(
             antecipar_com_valor(Decimal(500), Decimal("0.02"), 10, Decimal(1000)), MOMENTO
         ),
     }
@@ -55,7 +78,7 @@ def test_todo_relatorio_tem_titulo_data_e_aviso_de_estimativa(nome, texto):
     assert "**estimativa**" in texto
 
 
-@pytest.mark.parametrize("nome, texto", _gerar_todos().items())
+@pytest.mark.parametrize("nome, texto", _gerar_todos(compactar=False).items())
 def test_markdown_valido_para_o_obsidian(nome, texto):
     linhas = texto.split("\n")
     assert texto.endswith("\n")
@@ -64,13 +87,14 @@ def test_markdown_valido_para_o_obsidian(nome, texto):
         # Tabela precisa de linha em branco antes, senão vira parágrafo.
         if linha.startswith("|") and not linhas[numero - 1].startswith("|"):
             assert linhas[numero - 1] == "", f"{nome}: tabela sem linha em branco antes"
-            assert re.fullmatch(r"\|(---\|)+", linhas[numero + 1]), f"{nome}: tabela sem separador"
-        # Toda linha de uma tabela tem o mesmo número de colunas do cabeçalho.
+            assert re.fullmatch(r"\|( -{3,} \|)+", linhas[numero + 1]), f"{nome}: tabela sem separador"
         if linha.startswith("|"):
             inicio = numero
             while inicio > 0 and linhas[inicio - 1].startswith("|"):
                 inicio -= 1
+            # Mesmo número de colunas e mesma largura do cabeçalho (alinhada na tela).
             assert linha.count("|") == linhas[inicio].count("|"), f"{nome}: colunas desiguais"
+            assert len(linha) == len(linhas[inicio]), f"{nome}: tabela desalinhada"
 
 
 def test_data_atual_quando_nao_informada():
@@ -174,7 +198,7 @@ def test_antecipacao_por_quantidade():
     assert "valor a pagar hoje = P / (1 + i)^j" in texto
     assert "| 10 meses | 500,00 / 1,02^10 | R$ 410,17 | R$ 89,83 |" in texto
     assert "| 8 meses | 500,00 / 1,02^8 | R$ 426,75 | R$ 73,25 |" in texto
-    assert "| **Total** |  | **R$ 1.255,30** | **R$ 244,70** |" in texto
+    assert "| **Total** | | **R$ 1.255,30** | **R$ 244,70** |" in texto
     assert "**Pagando R$ 1.255,30 hoje, você economiza R$ 244,70 em juros.**" in texto
     assert "as que venceriam em 10, 9 e 8 meses" in texto
     assert "as 7 que vencem de 1 a 7 meses" in texto
