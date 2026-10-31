@@ -1,4 +1,4 @@
-"""Relatórios em Markdown dos cálculos (RF05 e a geração do texto do RF06).
+"""Relatórios em Markdown dos cálculos e dos gastos (RF05, RF11 e o texto do RF06).
 
 Cada relatório segue a mesma ordem, que é o princípio "sem dívida cognitiva"
 do projeto: o usuário vê **o que informou, a fórmula, cada passo e o resultado**,
@@ -18,9 +18,11 @@ from financas.core.antecipacao import ResultadoAntecipacao, valor_presente
 from financas.core.dinheiro import (
     arredondar,
     formatar_numero,
+    formatar_percentual,
     formatar_reais,
     formatar_taxa,
 )
+from financas.core.gastos import ResumoPeriodo, formatar_data
 from financas.core.meta_economia import LinhaMes, ResultadoAporte, ResultadoMeses
 
 # Tabelas de até 24 meses aparecem inteiras; acima disso, resumidas.
@@ -336,6 +338,126 @@ def _parcelas_que_ficam(r: ResultadoAntecipacao) -> str:
     if restantes == 1:
         return "a parcela atual (paga hoje) e a que vence em 1 mês"
     return f"a parcela atual (paga hoje) e as {restantes} que vencem de 1 a {restantes} meses"
+
+
+# ---------------------------------------------------------------------------
+# Gastos
+# ---------------------------------------------------------------------------
+
+
+def relatorio_gastos(resumo: ResumoPeriodo, gerado_em: datetime | None = None) -> str:
+    """Relatório do RF11: totais, saldo e ranking de saídas por categoria.
+
+    Não tem aviso de estimativa: aqui não há previsão, só a soma do que foi
+    lançado. Em compensação, lista os lançamentos do período, que são os
+    "dados informados" deste relatório.
+    """
+    r = resumo
+    linhas = _cabecalho("Relatório de gastos", gerado_em)
+    linhas.append("")
+    linhas.append(f"**Período:** {formatar_data(r.inicio)} a {formatar_data(r.fim)}")
+
+    linhas += _secao(f"Lançamentos do período ({len(r.lancamentos)})")
+    if r.lancamentos:
+        linhas += _tabela(
+            ["Data", "Tipo", "Categoria", "Descrição", "Valor"],
+            [
+                [
+                    formatar_data(l.data),
+                    "Saída" if l.eh_saida else "Entrada",
+                    _celula(l.categoria),
+                    _celula(l.descricao),
+                    formatar_reais(l.valor),
+                ]
+                for l in r.lancamentos
+            ],
+        )
+    else:
+        linhas.append("Nenhum lançamento no período.")
+
+    linhas += _secao("Fórmulas")
+    linhas += _bloco_formula(
+        [
+            "saldo = total de entradas − total de saídas",
+            "percentual da categoria = saídas da categoria / total de saídas",
+        ]
+    )
+    linhas.append("O ranking considera **apenas saídas**, da categoria com mais gastos para a com menos.")
+
+    linhas += _secao("Totais")
+    linhas += _tabela(
+        ["", "Valor"],
+        [
+            ["Total de entradas", formatar_reais(r.total_entradas)],
+            ["Total de saídas", formatar_reais(r.total_saidas)],
+            ["**Saldo**", f"**{formatar_reais(r.saldo)}**"],
+        ],
+    )
+    linhas.append("")
+    linhas.append(
+        f"Saldo = {formatar_numero(r.total_entradas)} − {formatar_numero(r.total_saidas)}"
+        f" = {formatar_numero(r.saldo)}"
+    )
+
+    linhas += _secao("Saídas por categoria")
+    if r.ranking:
+        linhas += _tabela(
+            ["#", "Categoria", "Valor", "% das saídas"],
+            [
+                [
+                    str(posicao),
+                    _celula(item.categoria),
+                    formatar_reais(item.valor),
+                    formatar_percentual(item.percentual, 1),
+                ]
+                for posicao, item in enumerate(r.ranking, start=1)
+            ],
+        )
+        linhas.append("")
+        primeiro = r.ranking[0]
+        linhas.append(
+            f"Exemplo: {_celula(primeiro.categoria)} = {formatar_numero(primeiro.valor)} / "
+            f"{formatar_numero(r.total_saidas)} = {formatar_percentual(primeiro.percentual, 1)}"
+        )
+        if len(r.ranking) > 1:
+            linhas.append("")
+            linhas.append(
+                "_Os percentuais são arredondados a uma casa; por isso a soma pode dar 99,9% ou 100,1%._"
+            )
+    else:
+        linhas.append("Sem saídas no período.")
+
+    linhas += _secao("Resultado")
+    linhas += _resultado_gastos(r)
+    return _juntar(linhas)
+
+
+def _resultado_gastos(r: ResumoPeriodo) -> list[str]:
+    if not r.lancamentos:
+        return ["**Nenhum lançamento no período.**"]
+    if r.saldo > 0:
+        situacao = f"saldo **positivo de {formatar_reais(r.saldo)}**"
+    elif r.saldo < 0:
+        situacao = f"saldo **negativo de {formatar_reais(-r.saldo)}**: você gastou mais do que recebeu"
+    else:
+        situacao = "saldo **zero**: você gastou exatamente o que recebeu"
+    linhas = [
+        f"No período, você recebeu {formatar_reais(r.total_entradas)} e gastou "
+        f"{formatar_reais(r.total_saidas)}; {situacao}."
+    ]
+    if r.ranking:
+        primeiro = r.ranking[0]
+        linhas.append("")
+        linhas.append(
+            f"A categoria com mais gastos foi **{_celula(primeiro.categoria)}**: "
+            f"{formatar_reais(primeiro.valor)} ({formatar_percentual(primeiro.percentual, 1)} das saídas)."
+        )
+    return linhas
+
+
+def _celula(texto: str) -> str:
+    # Uma "|" digitada pelo usuário quebraria a tabela; "\|" é a barra literal.
+    return texto.replace("|", "\\|")
 
 
 # ---------------------------------------------------------------------------
