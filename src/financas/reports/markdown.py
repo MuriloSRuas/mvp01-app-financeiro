@@ -353,9 +353,21 @@ def _secao(titulo: str) -> list[str]:
 
 
 def _tabela(cabecalhos: list[str], corpo: list[list[str]]) -> list[str]:
-    linhas = ["| " + " | ".join(cabecalhos) + " |", "|" + "---|" * len(cabecalhos)]
-    linhas += ["| " + " | ".join(celulas) + " |" for celulas in corpo]
-    return linhas
+    """Tabela Markdown com colunas alinhadas por espaços.
+
+    O alinhamento não muda nada no Obsidian (ele ignora os espaços extras),
+    mas deixa a tabela legível na tela do programa, que mostra o texto puro.
+    """
+    larguras = [
+        max(3, len(cabecalho), *(len(celulas[coluna]) for celulas in corpo))
+        for coluna, cabecalho in enumerate(cabecalhos)
+    ]
+
+    def linha(celulas: list[str]) -> str:
+        return "| " + " | ".join(c.ljust(l) for c, l in zip(celulas, larguras)) + " |"
+
+    separador = "| " + " | ".join("-" * l for l in larguras) + " |"
+    return [linha(cabecalhos), separador, *(linha(celulas) for celulas in corpo)]
 
 
 def _bloco_formula(formulas: list[str]) -> list[str]:

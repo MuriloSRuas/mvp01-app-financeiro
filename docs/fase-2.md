@@ -32,12 +32,12 @@ Gerado em 31/10/2026 às 14:05.
 
 ## Dados informados
 
-| Parâmetro | Valor |
-|---|---|
-| Valor da parcela (P) | R$ 500,00 |
-| Juros do contrato (i) | 2% ao mês |
-| Parcelas restantes, além da atual (m) | 10 |
-| Valor disponível para antecipar | R$ 1.000,00 |
+| Parâmetro                             | Valor       |
+| ------------------------------------- | ----------- |
+| Valor da parcela (P)                  | R$ 500,00   |
+| Juros do contrato (i)                 | 2% ao mês   |
+| Parcelas restantes, além da atual (m) | 10          |
+| Valor disponível para antecipar       | R$ 1.000,00 |
 
 ## Fórmula
 
@@ -50,11 +50,11 @@ Com valor disponível: soma-se o valor a pagar a partir da última parcela, indo
 
 ## Passo a passo
 
-| Vence em | Cálculo | Valor a pagar hoje | Economia |
-|---|---|---|---|
-| 10 meses | 500,00 / 1,02^10 | R$ 410,17 | R$ 89,83 |
-| 9 meses | 500,00 / 1,02^9 | R$ 418,38 | R$ 81,62 |
-| **Total** |  | **R$ 828,55** | **R$ 171,45** |
+| Vence em  | Cálculo          | Valor a pagar hoje | Economia      |
+| --------- | ---------------- | ------------------ | ------------- |
+| 10 meses  | 500,00 / 1,02^10 | R$ 410,17          | R$ 89,83      |
+| 9 meses   | 500,00 / 1,02^9  | R$ 418,38          | R$ 81,62      |
+| **Total** |                  | **R$ 828,55**      | **R$ 171,45** |
 
 A próxima parcela (vence em 8 meses) custaria R$ 426,75 hoje e não cabe no que sobra (R$ 171,45).
 
