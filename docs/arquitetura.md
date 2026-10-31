@@ -39,13 +39,22 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 ├── src/financas/
 │   ├── __main__.py           # permite rodar com: python -m financas
 │   ├── core/                 # regras puras
-│   ├── reports/              # relatórios Markdown
-│   ├── storage/              # SQLite
-│   └── ui/                   # Tkinter
+│   │   ├── dinheiro.py       # parse/formatação pt-BR, arredondamento, validação
+│   │   ├── meta_economia.py  # RF01 e RF02
+│   │   └── antecipacao.py    # RF03 e RF04
+│   ├── reports/
+│   │   ├── markdown.py       # monta o texto dos relatórios (RF05)
+│   │   └── arquivo.py        # grava o .md em disco (RF06)
+│   ├── storage/              # SQLite (Fase 4)
+│   └── ui/
+│       ├── app.py            # janela principal com abas
+│       ├── componentes.py    # peças comuns às abas de cálculo
+│       ├── aba_meta.py
+│       └── aba_antecipacao.py
 └── tests/                    # testes automatizados (pytest)
 ```
 
-Os arquivos de cada pasta serão criados nas fases seguintes (veja `docs/fase-N.md`).
+Dois arquivos não estavam na estrutura do plano: `reports/arquivo.py` (separa "montar texto" de "gravar em disco") e `ui/componentes.py` (evita repetir nas duas abas o mesmo formulário + relatório + botão Salvar). Os arquivos de gastos chegam nas Fases 4 e 5.
 
 ## Decisões gerais
 
