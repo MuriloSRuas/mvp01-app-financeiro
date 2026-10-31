@@ -3,17 +3,25 @@ passo a passo, resultado e aviso), não o texto inteiro. Assim um ajuste de
 redação não quebra todos os testes, mas a falta de uma informação quebra."""
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
 
 from financas.core.antecipacao import antecipar_com_valor, antecipar_quantidade
+from financas.core.gastos import ENTRADA, SAIDA, novo_lancamento, resumir
 from financas.core.meta_economia import calcular_aporte, calcular_meses
 from financas.reports import markdown
 
 MOMENTO = datetime(2026, 10, 31, 14, 5)
+OUTUBRO = (date(2026, 10, 1), date(2026, 10, 31))
 SECOES = ["## Dados informados", "## Fórmula", "## Passo a passo", "## Resultado", "> [!warning]"]
+SECOES_GASTOS = ["## Lançamentos do período", "## Fórmulas", "## Totais", "## Saídas por categoria", "## Resultado"]
+
+
+def _calculos(textos):
+    """Só os relatórios de cálculo (meta e antecipação), que têm aviso de estimativa."""
+    return {nome: texto for nome, texto in textos.items() if nome != "gastos"}
 
 
 def _compactar(texto):
@@ -43,8 +51,31 @@ def _gerar_todos(compactar=True):
     return textos
 
 
+def _divisorias(linha):
+    return len(re.findall(r"(?<!\\)\|", linha))
+
+
+def relatorio_gastos(*args):
+    return _compactar(markdown.relatorio_gastos(*args))
+
+
+def _lancamentos_outubro():
+    def n(tipo, valor, dia, categoria, descricao=""):
+        return novo_lancamento(tipo, Decimal(valor), date(2026, 10, dia), categoria, descricao)
+
+    return [
+        n(ENTRADA, "5000.00", 1, "Salário"),
+        n(SAIDA, "1500.00", 5, "Aluguel"),
+        n(SAIDA, "320.45", 8, "Mercado", "compra do mês"),
+        n(SAIDA, "89.90", 15, "Lazer", "cinema | pipoca"),
+        n(SAIDA, "112.30", 20, "Mercado", "feira"),
+        n(SAIDA, "60.00", 22, ""),
+    ]
+
+
 def _gerar_originais():
     return {
+        "gastos": markdown.relatorio_gastos(resumir(_lancamentos_outubro(), *OUTUBRO), MOMENTO),
         "meses sem juros": markdown.relatorio_meses(calcular_meses(Decimal(10000), Decimal(200)), MOMENTO),
         "meses com juros": markdown.relatorio_meses(
             calcular_meses(Decimal(10000), Decimal(200), Decimal("0.005")), MOMENTO
@@ -65,14 +96,14 @@ def _gerar_originais():
 # --- Estrutura comum (RF05) ---------------------------------------------------
 
 
-@pytest.mark.parametrize("nome, texto", _gerar_todos().items())
-def test_todo_relatorio_tem_as_secoes_na_ordem(nome, texto):
+@pytest.mark.parametrize("nome, texto", _calculos(_gerar_todos()).items())
+def test_todo_relatorio_de_calculo_tem_as_secoes_na_ordem(nome, texto):
     posicoes = [texto.index(secao) for secao in SECOES]
     assert posicoes == sorted(posicoes), nome
 
 
-@pytest.mark.parametrize("nome, texto", _gerar_todos().items())
-def test_todo_relatorio_tem_titulo_data_e_aviso_de_estimativa(nome, texto):
+@pytest.mark.parametrize("nome, texto", _calculos(_gerar_todos()).items())
+def test_todo_relatorio_de_calculo_tem_titulo_data_e_aviso_de_estimativa(nome, texto):
     assert texto.startswith("# ")
     assert "Gerado em 31/10/2026 às 14:05." in texto
     assert "**estimativa**" in texto
@@ -93,7 +124,8 @@ def test_markdown_valido_para_o_obsidian(nome, texto):
             while inicio > 0 and linhas[inicio - 1].startswith("|"):
                 inicio -= 1
             # Mesmo número de colunas e mesma largura do cabeçalho (alinhada na tela).
-            assert linha.count("|") == linhas[inicio].count("|"), f"{nome}: colunas desiguais"
+            # "\|" é uma barra escrita pelo usuário, não divisão de coluna.
+            assert _divisorias(linha) == _divisorias(linhas[inicio]), f"{nome}: colunas desiguais"
             assert len(linha) == len(linhas[inicio]), f"{nome}: tabela desalinhada"
 
 
@@ -229,3 +261,94 @@ def test_antecipacao_de_nenhuma_parcela():
     texto = relatorio_antecipacao(antecipar_quantidade(Decimal(500), Decimal("0.02"), 10, 0), MOMENTO)
     assert texto.count("Nenhuma parcela antecipada.") == 2  # passo a passo e resultado
     assert "| **Total** |" not in texto
+
+
+# --- Gastos (RF11) -------------------------------------------------------------------
+
+
+def _relatorio_outubro():
+    return relatorio_gastos(resumir(_lancamentos_outubro(), *OUTUBRO), MOMENTO)
+
+
+def test_gastos_secoes_na_ordem_sem_aviso_de_estimativa():
+    texto = _relatorio_outubro()
+    assert texto.startswith("# Relatório de gastos\n")
+    assert "Gerado em 31/10/2026 às 14:05." in texto
+    assert "**Período:** 01/10/2026 a 31/10/2026" in texto
+    posicoes = [texto.index(secao) for secao in SECOES_GASTOS]
+    assert posicoes == sorted(posicoes)
+    assert "estimativa" not in texto
+
+
+def test_gastos_lista_os_lancamentos():
+    texto = _relatorio_outubro()
+    assert "## Lançamentos do período (6)" in texto
+    assert "| 01/10/2026 | Entrada | Salário | | R$ 5.000,00 |" in texto
+    assert "| 08/10/2026 | Saída | Mercado | compra do mês | R$ 320,45 |" in texto
+    assert "| 22/10/2026 | Saída | Sem categoria | | R$ 60,00 |" in texto
+
+
+def test_gastos_barra_digitada_nao_quebra_a_tabela():
+    assert "| Lazer | cinema \\| pipoca |" in _relatorio_outubro()
+
+
+def test_gastos_totais_e_saldo():
+    texto = _relatorio_outubro()
+    assert "saldo = total de entradas − total de saídas" in texto
+    assert "| Total de entradas | R$ 5.000,00 |" in texto
+    assert "| Total de saídas | R$ 2.082,65 |" in texto
+    assert "| **Saldo** | **R$ 2.917,35** |" in texto
+    assert "Saldo = 5.000,00 − 2.082,65 = 2.917,35" in texto
+
+
+def test_gastos_ranking_com_percentual_de_uma_casa():
+    texto = _relatorio_outubro()
+    assert "percentual da categoria = saídas da categoria / total de saídas" in texto
+    assert "| 1 | Aluguel | R$ 1.500,00 | 72,0% |" in texto
+    assert "| 2 | Mercado | R$ 432,75 | 20,8% |" in texto
+    assert "| 3 | Lazer | R$ 89,90 | 4,3% |" in texto
+    assert "| 4 | Sem categoria | R$ 60,00 | 2,9% |" in texto
+    assert "Exemplo: Aluguel = 1.500,00 / 2.082,65 = 72,0%" in texto
+    assert "Salário |" not in texto.split("## Saídas por categoria")[1]  # entradas fora do ranking
+
+
+def test_gastos_resultado_positivo():
+    texto = _relatorio_outubro()
+    assert "você recebeu R$ 5.000,00 e gastou R$ 2.082,65; saldo **positivo de R$ 2.917,35**." in texto
+    assert "A categoria com mais gastos foi **Aluguel**: R$ 1.500,00 (72,0% das saídas)." in texto
+
+
+def _resumo(*lancamentos):
+    return resumir(
+        [novo_lancamento(tipo, Decimal(valor), date(2026, 10, 1), "X") for tipo, valor in lancamentos], *OUTUBRO
+    )
+
+
+def test_gastos_saldo_negativo():
+    texto = relatorio_gastos(_resumo((ENTRADA, "100"), (SAIDA, "250")), MOMENTO)
+    assert "saldo **negativo de R$ 150,00**: você gastou mais do que recebeu" in texto
+
+
+def test_gastos_saldo_zero():
+    texto = relatorio_gastos(_resumo((ENTRADA, "100"), (SAIDA, "100")), MOMENTO)
+    assert "saldo **zero**" in texto
+
+
+def test_gastos_sem_saidas():
+    texto = relatorio_gastos(_resumo((ENTRADA, "100")), MOMENTO)
+    assert "Sem saídas no período." in texto
+    assert "A categoria com mais gastos" not in texto
+
+
+def test_gastos_uma_categoria_sem_nota_de_arredondamento():
+    texto = relatorio_gastos(_resumo((SAIDA, "100")), MOMENTO)
+    assert "| 1 | X | R$ 100,00 | 100,0% |" in texto
+    assert "99,9%" not in texto
+
+
+def test_gastos_periodo_vazio():
+    texto = relatorio_gastos(resumir([], *OUTUBRO), MOMENTO)
+    assert "## Lançamentos do período (0)" in texto
+    assert "Nenhum lançamento no período." in texto
+    assert "**Nenhum lançamento no período.**" in texto
+    assert "Sem saídas no período." in texto
