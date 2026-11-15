@@ -10,7 +10,8 @@ from tkinter import ttk
 
 from financas.core.antecipacao import antecipar_com_valor, antecipar_quantidade
 from financas.core.dinheiro import ler_dinheiro, ler_inteiro, ler_taxa_percentual
-from financas.reports.markdown import relatorio_antecipacao
+from financas.reports.documento import Documento
+from financas.reports.relatorios import relatorio_antecipacao
 from financas.ui.componentes import AbaCalculo, criar_campo, habilitar, ler_campo
 
 QUANTIDADE = "quantidade"
@@ -55,7 +56,7 @@ class AbaAntecipacao(AbaCalculo):
         habilitar(self.campo_quantidade, por_quantidade)
         habilitar(self.campo_valor, not por_quantidade)
 
-    def gerar_relatorio(self, momento: datetime) -> tuple[str, str]:
+    def gerar_relatorio(self, momento: datetime) -> tuple[Documento, str]:
         parcela = ler_campo(self.campo_parcela, ler_dinheiro, "Valor da parcela")
         taxa = ler_campo(self.campo_taxa, ler_taxa_percentual, "Juros do contrato")
         restantes = ler_campo(self.campo_restantes, ler_inteiro, "Parcelas restantes")

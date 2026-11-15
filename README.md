@@ -6,7 +6,7 @@ Software desktop **offline** para tirar do caderno os cálculos financeiros do d
 - **Antecipação de parcelas**: quanto economizo pagando agora as últimas parcelas de um financiamento.
 - **Lançamento de gastos**: entradas e saídas, com edição, exclusão, filtro por mês e relatório por período.
 
-Todo cálculo gera um **relatório em Markdown** (dados informados, fórmula, passo a passo e resultado) que pode ser salvo e aberto no Obsidian. O programa **não pensa por você**: você informa os dados, ele mostra a conta inteira.
+Todo cálculo aparece **na própria tela**, já formatado: dados informados, fórmula, passo a passo, tabelas e resultado. O programa **não pensa por você**: você informa os dados, ele mostra a conta inteira. Se quiser guardar, o relatório pode ser salvo como arquivo Markdown (`.md`) e aberto no Obsidian.
 
 ![Aba Gastos](docs/imagens/fase-5-gastos.png)
 
@@ -48,7 +48,7 @@ A janela tem três abas:
 
 Valores no formato brasileiro: `1.234,56` ou `1234,56`. Datas como `31/10/2026`.
 
-Em qualquer relatório, **Salvar relatório (.md)** grava o arquivo na pasta que você escolher (por exemplo, o seu cofre do Obsidian).
+Em qualquer relatório, **Salvar relatório (.md)** é opcional: converte o que está na tela em Markdown e grava o arquivo na pasta que você escolher (por exemplo, o seu cofre do Obsidian).
 
 ### Onde ficam os seus dados
 
@@ -70,7 +70,7 @@ pytest --cov=financas.core --cov-report=term-missing     # cobertura do núcleo
 
 - [`docs/arquitetura.md`](docs/arquitetura.md): como o código está organizado.
 - `docs/fase-0.md` a `docs/fase-5.md`: o que foi feito em cada fase, com decisões e termos técnicos explicados.
-- [`docs/exemplos/`](docs/exemplos/): relatórios gerados pelo programa.
+- [`docs/exemplos/`](docs/exemplos/): relatórios salvos pelo programa (arquivos `.md`).
 - [`docs/ideias-futuras.md`](docs/ideias-futuras.md): ideias anotadas para depois do MVP.
 
 ## Licença

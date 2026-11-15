@@ -11,7 +11,8 @@ ui/ (Tkinter)  →  core/ (regras puras, sem UI e sem banco)
       ↓
 storage/ (SQLite)  →  usa tipos do core
 
-reports/ (Markdown)  →  transforma resultados do core em texto
+reports/  →  monta o relatório (blocos) a partir dos resultados do core;
+            converte em Markdown só ao salvar
 ```
 
 A seta significa "conhece / importa". O `core` não conhece ninguém: ele não sabe que existe janela nem banco.
@@ -19,9 +20,9 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 | Pasta | Responsabilidade | Pode importar | Não pode importar |
 |---|---|---|---|
 | `core/` | Fórmulas e regras de negócio: dinheiro, meta de economia, antecipação, totais de gastos. | Só biblioteca padrão (`decimal`, `math`, `datetime`...). | `tkinter`, `sqlite3`, `ui`, `storage`. |
-| `reports/` | Monta o texto Markdown dos relatórios a partir dos resultados do `core`. A tela mostra esse mesmo texto. | `core`. | `tkinter`, `sqlite3`. |
+| `reports/` | Monta os relatórios a partir dos resultados do `core`, como uma lista de blocos (seção, parágrafo, fórmula, tabela, passos, aviso), sem formato de saída. Converte esses blocos em Markdown quando o usuário salva o arquivo. | `core`. | `tkinter`, `sqlite3`. |
 | `storage/` | Guarda e lê os lançamentos de gastos no SQLite. Decide onde fica o arquivo do banco em cada sistema operacional. | `core`, `sqlite3`, `pathlib`. | `tkinter`, `ui`. |
-| `ui/` | Janela, abas, campos e botões. Lê o que o usuário digitou, chama o `core`/`reports`/`storage` e mostra o resultado ou o erro. | Todas as outras. | (nada abaixo dela) |
+| `ui/` | Janela, abas, campos e botões. Lê o que o usuário digitou, chama o `core`/`reports`/`storage` e desenha o relatório formatado (fontes, tabelas alinhadas, destaques) ou mostra o erro. | Todas as outras. | (nada abaixo dela) |
 
 ### Por que separar assim?
 
@@ -44,7 +45,9 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 │   │   ├── antecipacao.py    # RF03 e RF04
 │   │   └── gastos.py         # lançamento, datas, totais, saldo, ranking (RF07, RF11)
 │   ├── reports/
-│   │   ├── markdown.py       # monta o texto dos relatórios (RF05, RF11)
+│   │   ├── documento.py      # estrutura do relatório: blocos, sem formato de saída
+│   │   ├── relatorios.py     # monta o conteúdo dos relatórios (RF05, RF11)
+│   │   ├── markdown.py       # converte o relatório em Markdown, ao salvar (RF06)
 │   │   └── arquivo.py        # grava o .md em disco (RF06)
 │   ├── storage/
 │   │   ├── caminhos.py       # onde fica o banco em cada sistema (único código por SO)
@@ -52,6 +55,7 @@ A seta significa "conhece / importa". O `core` não conhece ninguém: ele não s
 │   └── ui/
 │       ├── app.py            # janela principal com abas
 │       ├── componentes.py    # peças comuns às abas de cálculo
+│       ├── visualizacao.py   # desenha o relatório formatado na tela
 │       ├── aba_meta.py
 │       ├── aba_antecipacao.py
 │       └── aba_gastos.py

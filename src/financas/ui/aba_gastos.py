@@ -25,7 +25,7 @@ from financas.core.gastos import (
     resumir,
 )
 from financas.reports.arquivo import nome_arquivo
-from financas.reports.markdown import relatorio_gastos
+from financas.reports.relatorios import relatorio_gastos
 from financas.storage.repositorio import RepositorioLancamentos, periodo_do_mes
 from financas.ui.componentes import PainelRelatorio, ler_campo, mostrar_erro
 
