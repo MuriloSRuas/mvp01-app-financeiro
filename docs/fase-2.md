@@ -1,5 +1,7 @@
 # Fase 2: Relatórios
 
+> **Atualização:** o conteúdo dos relatórios saiu de `reports/markdown.py` para `reports/relatorios.py`, e a tela passou a mostrar os cálculos formatados (sem Markdown cru). Veja [`calculos-na-tela.md`](calculos-na-tela.md).
+
 ## O que foi feito
 
 Os resultados das calculadoras agora viram **relatórios em Markdown**, prontos para a tela (Fase 3) e para o Obsidian. Todo relatório tem, nesta ordem (RF05):
