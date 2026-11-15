@@ -1,8 +1,8 @@
 """Peças de interface usadas pelas abas de cálculo.
 
 As duas calculadoras têm o mesmo esqueleto: campos com rótulo, botão
-Calcular, área com o relatório e botão "Salvar relatório (.md)". Em vez de
-repetir esse código em cada aba, ele fica aqui.
+Calcular, área com o relatório (contas formatadas na própria tela) e botão
+"Salvar relatório (.md)". Em vez de repetir esse código em cada aba, ele fica aqui.
 """
 
 import tkinter as tk
@@ -14,6 +14,9 @@ from typing import TypeVar
 
 from financas.core.dinheiro import ErroDeValidacao
 from financas.reports.arquivo import nome_arquivo, salvar_relatorio
+from financas.reports.documento import Documento
+from financas.reports.markdown import para_markdown
+from financas.ui.visualizacao import configurar_estilos, desenhar, mostrar_mensagem
 
 T = TypeVar("T")
 
@@ -56,15 +59,16 @@ def mostrar_erro(pai: tk.Misc, erro: Exception) -> None:
 
 
 class PainelRelatorio(ttk.Frame):
-    """Área de texto (só leitura) com o relatório e o botão "Salvar relatório (.md)".
+    """Área (só leitura) com o relatório formatado e o botão "Salvar relatório (.md)".
 
-    Guarda o último relatório gerado. É esse texto, igual ao que aparece na
-    tela, que vai para o arquivo.
+    A tela mostra as contas já formatadas (ver `visualizacao.py`). Guarda o
+    último relatório gerado; se o usuário quiser o arquivo, esse mesmo
+    relatório é convertido em Markdown na hora de salvar.
     """
 
     def __init__(self, pai: tk.Misc) -> None:
         super().__init__(pai)
-        self._texto_atual = ""
+        self._documento: Documento | None = None
         self._nome_sugerido = ""
         self._ultima_pasta = Path.home()
 
@@ -74,8 +78,9 @@ class PainelRelatorio(ttk.Frame):
 
         moldura = ttk.Frame(self)
         moldura.pack(side="top", fill="both", expand=True)
-        # wrap="none": linhas longas (tabelas) não quebram; usa-se a barra horizontal.
-        self.area = tk.Text(moldura, font="TkFixedFont", wrap="none", height=20, padx=8, pady=8)
+        # Parágrafos quebram linha; tabelas e fórmulas não (usa-se a barra horizontal).
+        self.area = tk.Text(moldura, height=20, padx=12, pady=10, relief="flat", cursor="arrow")
+        configurar_estilos(self.area)
         rolagem_v = ttk.Scrollbar(moldura, orient="vertical", command=self.area.yview)
         rolagem_h = ttk.Scrollbar(moldura, orient="horizontal", command=self.area.xview)
         self.area.configure(yscrollcommand=rolagem_v.set, xscrollcommand=rolagem_h.set)
@@ -85,13 +90,14 @@ class PainelRelatorio(ttk.Frame):
         moldura.rowconfigure(0, weight=1)
         moldura.columnconfigure(0, weight=1)
 
-        self._escrever("Preencha os dados acima e clique em Calcular.\n")
+        mostrar_mensagem(self.area, "Preencha os dados acima e clique em Calcular.\n")
 
-    def mostrar(self, texto: str, nome_sugerido: str) -> None:
-        """Exibe um novo relatório e libera o botão de salvar."""
-        self._texto_atual = texto
+    def mostrar(self, documento: Documento, nome_sugerido: str) -> None:
+        """Desenha um novo relatório na tela e libera o botão de salvar."""
+        self._documento = documento
         self._nome_sugerido = nome_sugerido
-        self._escrever(texto)
+        desenhar(self.area, documento)
+        self.area.yview_moveto(0)
         self.botao_salvar.state(["!disabled"])
 
     def salvar(self) -> None:
@@ -104,22 +110,15 @@ class PainelRelatorio(ttk.Frame):
             defaultextension=".md",
             filetypes=[("Markdown", "*.md"), ("Todos os arquivos", "*")],
         )
-        if not escolhido:  # usuário cancelou
+        if not escolhido or self._documento is None:  # usuário cancelou
             return
         try:
-            caminho = salvar_relatorio(self._texto_atual, Path(escolhido))
+            caminho = salvar_relatorio(para_markdown(self._documento), Path(escolhido))
         except OSError as erro:
             messagebox.showerror("Não foi possível salvar", f"{escolhido}\n\n{erro.strerror}", parent=self)
             return
         self._ultima_pasta = caminho.parent
         messagebox.showinfo("Relatório salvo", f"Salvo em:\n{caminho}", parent=self)
-
-    def _escrever(self, texto: str) -> None:
-        # O Text precisa estar "normal" para receber texto; depois volta a só leitura.
-        self.area.configure(state="normal")
-        self.area.delete("1.0", "end")
-        self.area.insert("1.0", texto)
-        self.area.configure(state="disabled")
 
 
 class AbaCalculo(ttk.Frame):
@@ -127,7 +126,7 @@ class AbaCalculo(ttk.Frame):
 
     Cada aba concreta (meta, antecipação) monta seus campos em
     `self.formulario` e implementa `gerar_relatorio`, que lê os campos,
-    chama o core e devolve (texto do relatório, prefixo do nome do arquivo).
+    chama o core e devolve (relatório, prefixo do nome do arquivo).
     """
 
     def __init__(self, pai: tk.Misc) -> None:
@@ -147,11 +146,11 @@ class AbaCalculo(ttk.Frame):
     def calcular(self) -> None:
         momento = datetime.now()
         try:
-            texto, prefixo = self.gerar_relatorio(momento)
+            documento, prefixo = self.gerar_relatorio(momento)
         except ErroDeValidacao as erro:
             mostrar_erro(self, erro)
             return
-        self.painel.mostrar(texto, nome_arquivo(prefixo, momento))
+        self.painel.mostrar(documento, nome_arquivo(prefixo, momento))
 
-    def gerar_relatorio(self, momento: datetime) -> tuple[str, str]:
+    def gerar_relatorio(self, momento: datetime) -> tuple[Documento, str]:
         raise NotImplementedError

@@ -1,5 +1,7 @@
 # Fase 3: Interface das calculadoras
 
+> **Atualização:** a tela não mostra mais o Markdown cru; os cálculos aparecem formatados e o Markdown só é gerado ao salvar o arquivo. Veja [`calculos-na-tela.md`](calculos-na-tela.md).
+
 ## O que foi feito
 
 O programa agora tem **janela**. `python -m financas` abre o Finanças com duas abas:

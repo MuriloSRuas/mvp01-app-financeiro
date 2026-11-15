@@ -11,7 +11,9 @@ import pytest
 from financas.core.antecipacao import antecipar_com_valor, antecipar_quantidade
 from financas.core.gastos import ENTRADA, SAIDA, novo_lancamento, resumir
 from financas.core.meta_economia import calcular_aporte, calcular_meses
-from financas.reports import markdown
+from financas.reports import relatorios
+from financas.reports.documento import Formula, Passos, Secao, Tabela
+from financas.reports.markdown import para_markdown
 
 MOMENTO = datetime(2026, 10, 31, 14, 5)
 OUTUBRO = (date(2026, 10, 1), date(2026, 10, 31))
@@ -30,18 +32,29 @@ def _compactar(texto):
     return re.sub(r" {2,}\|", " |", texto)
 
 
+def _md(construir):
+    """O relatório convertido em Markdown, como vai para o arquivo .md."""
+    return lambda *args: para_markdown(construir(*args))
+
+
+md_relatorio_meses = _md(relatorios.relatorio_meses)
+md_relatorio_aporte = _md(relatorios.relatorio_aporte)
+md_relatorio_antecipacao = _md(relatorios.relatorio_antecipacao)
+md_relatorio_gastos = _md(relatorios.relatorio_gastos)
+
+
 # Os testes de conteúdo usam estas versões compactadas; o teste de Markdown
 # válido usa o texto original (`_gerar_todos(compactar=False)`).
 def relatorio_meses(*args):
-    return _compactar(markdown.relatorio_meses(*args))
+    return _compactar(md_relatorio_meses(*args))
 
 
 def relatorio_aporte(*args):
-    return _compactar(markdown.relatorio_aporte(*args))
+    return _compactar(md_relatorio_aporte(*args))
 
 
 def relatorio_antecipacao(*args):
-    return _compactar(markdown.relatorio_antecipacao(*args))
+    return _compactar(md_relatorio_antecipacao(*args))
 
 
 def _gerar_todos(compactar=True):
@@ -56,7 +69,7 @@ def _divisorias(linha):
 
 
 def relatorio_gastos(*args):
-    return _compactar(markdown.relatorio_gastos(*args))
+    return _compactar(md_relatorio_gastos(*args))
 
 
 def _lancamentos_outubro():
@@ -75,19 +88,19 @@ def _lancamentos_outubro():
 
 def _gerar_originais():
     return {
-        "gastos": markdown.relatorio_gastos(resumir(_lancamentos_outubro(), *OUTUBRO), MOMENTO),
-        "meses sem juros": markdown.relatorio_meses(calcular_meses(Decimal(10000), Decimal(200)), MOMENTO),
-        "meses com juros": markdown.relatorio_meses(
+        "gastos": md_relatorio_gastos(resumir(_lancamentos_outubro(), *OUTUBRO), MOMENTO),
+        "meses sem juros": md_relatorio_meses(calcular_meses(Decimal(10000), Decimal(200)), MOMENTO),
+        "meses com juros": md_relatorio_meses(
             calcular_meses(Decimal(10000), Decimal(200), Decimal("0.005")), MOMENTO
         ),
-        "aporte sem juros": markdown.relatorio_aporte(calcular_aporte(Decimal(10000), 50), MOMENTO),
-        "aporte com juros": markdown.relatorio_aporte(
+        "aporte sem juros": md_relatorio_aporte(calcular_aporte(Decimal(10000), 50), MOMENTO),
+        "aporte com juros": md_relatorio_aporte(
             calcular_aporte(Decimal(10000), 45, Decimal("0.005")), MOMENTO
         ),
-        "antecipação": markdown.relatorio_antecipacao(
+        "antecipação": md_relatorio_antecipacao(
             antecipar_quantidade(Decimal(500), Decimal("0.02"), 10, 3), MOMENTO
         ),
-        "antecipação por valor": markdown.relatorio_antecipacao(
+        "antecipação por valor": md_relatorio_antecipacao(
             antecipar_com_valor(Decimal(500), Decimal("0.02"), 10, Decimal(1000)), MOMENTO
         ),
     }
@@ -352,3 +365,55 @@ def test_gastos_periodo_vazio():
     assert "Nenhum lançamento no período." in texto
     assert "**Nenhum lançamento no período.**" in texto
     assert "Sem saídas no período." in texto
+
+
+# --- Relatório na tela ---------------------------------------------------------
+
+
+def _documentos():
+    lancamentos = resumir(_lancamentos_outubro(), *OUTUBRO)
+    return {
+        "gastos": relatorios.relatorio_gastos(lancamentos, MOMENTO),
+        "meses": relatorios.relatorio_meses(calcular_meses(Decimal(10000), Decimal(200), Decimal("0.005")), MOMENTO),
+        "aporte": relatorios.relatorio_aporte(calcular_aporte(Decimal(10000), 45, Decimal("0.005")), MOMENTO),
+        "antecipação": relatorios.relatorio_antecipacao(
+            antecipar_com_valor(Decimal(500), Decimal("0.02"), 10, Decimal(1000)), MOMENTO
+        ),
+    }
+
+
+def _textos_do_documento(documento):
+    """Todo texto que a tela desenha, sem os estilos."""
+    for bloco in documento.blocos:
+        if isinstance(bloco, Secao):
+            yield bloco.titulo
+        elif isinstance(bloco, Formula):
+            yield from bloco.linhas
+        elif isinstance(bloco, Tabela):
+            yield from bloco.cabecalhos
+            for linha in bloco.linhas:
+                yield from linha
+        elif isinstance(bloco, Passos):
+            for item in bloco.itens:
+                yield from (t.texto for t in item)
+        else:
+            yield from (t.texto for t in bloco.conteudo)
+
+
+@pytest.mark.parametrize("nome, documento", _documentos().items())
+def test_relatorio_da_tela_nao_tem_simbolos_de_markdown(nome, documento):
+    # A tela desenha o texto com estilos; "**", "##", "```" e "\|" não podem aparecer.
+    for trecho in _textos_do_documento(documento):
+        for simbolo in ("**", "##", "```", "\\|", "> [!"):
+            assert simbolo not in trecho, f"{nome}: {simbolo!r} em {trecho!r}"
+
+
+def test_relatorio_da_tela_mostra_o_texto_digitado_sem_escapar():
+    textos = list(_textos_do_documento(_documentos()["gastos"]))
+    assert "cinema | pipoca" in textos
+
+
+def test_relatorio_da_tela_destaca_a_linha_de_total():
+    documento = _documentos()["meses"]
+    tabelas = [b for b in documento.blocos if isinstance(b, Tabela) and b.destacar_ultima]
+    assert tabelas[-1].linhas[-1] == ("Saldo final", "R$ 10.064,83")

@@ -1,7 +1,7 @@
 """Aba "Meta de economia": formulário do RF01/RF02 e relatório.
 
 Esta aba não faz conta nenhuma: lê os campos, chama o core e mostra o
-relatório. Toda regra está em `core/meta_economia.py`.
+relatório formatado. Toda regra está em `core/meta_economia.py`.
 """
 
 import tkinter as tk
@@ -11,7 +11,8 @@ from tkinter import ttk
 
 from financas.core.dinheiro import ler_dinheiro, ler_inteiro, ler_taxa_percentual
 from financas.core.meta_economia import calcular_aporte, calcular_meses
-from financas.reports.markdown import relatorio_aporte, relatorio_meses
+from financas.reports.documento import Documento
+from financas.reports.relatorios import relatorio_aporte, relatorio_meses
 from financas.ui.componentes import AbaCalculo, criar_campo, habilitar, ler_campo
 
 MESES = "meses"
@@ -52,16 +53,16 @@ class AbaMeta(AbaCalculo):
         habilitar(self.campo_aporte, por_meses)
         habilitar(self.campo_prazo, not por_meses)
 
-    def gerar_relatorio(self, momento: datetime) -> tuple[str, str]:
+    def gerar_relatorio(self, momento: datetime) -> tuple[Documento, str]:
         meta = ler_campo(self.campo_meta, ler_dinheiro, "Valor da meta")
         taxa = self._ler_taxa()
         if self.modo.get() == MESES:
             aporte = ler_campo(self.campo_aporte, ler_dinheiro, "Aporte mensal")
-            texto = relatorio_meses(calcular_meses(meta, aporte, taxa), momento)
+            documento = relatorio_meses(calcular_meses(meta, aporte, taxa), momento)
         else:
             prazo = ler_campo(self.campo_prazo, ler_inteiro, "Prazo em meses")
-            texto = relatorio_aporte(calcular_aporte(meta, prazo, taxa), momento)
-        return texto, "meta-economia"
+            documento = relatorio_aporte(calcular_aporte(meta, prazo, taxa), momento)
+        return documento, "meta-economia"
 
     def _ler_taxa(self) -> Decimal:
         # RF01: a taxa é opcional e vale 0% quando não informada.

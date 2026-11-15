@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "financas"
 version = "0.1.0"
-description = "Calculadoras financeiras e controle de gastos, offline, com relatórios em Markdown."
+description = "Calculadoras financeiras e controle de gastos, offline, com as contas na tela e relatórios exportáveis em Markdown."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
