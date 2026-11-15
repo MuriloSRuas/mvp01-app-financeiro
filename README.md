@@ -8,6 +8,8 @@ Software desktop **offline** para tirar do caderno os cálculos financeiros do d
 
 Todo cálculo aparece **na própria tela**, já formatado: dados informados, fórmula, passo a passo, tabelas e resultado. O programa **não pensa por você**: você informa os dados, ele mostra a conta inteira. Se quiser guardar, o relatório pode ser salvo como arquivo Markdown (`.md`) e aberto no Obsidian.
 
+![Meta de economia com o cálculo formatado na tela](docs/imagens/calculos-na-tela-meta.png)
+
 ![Aba Gastos](docs/imagens/fase-5-gastos.png)
 
 > Status: MVP em validação. Veja como foi construído em [`docs/`](docs/).
@@ -70,6 +72,7 @@ pytest --cov=financas.core --cov-report=term-missing     # cobertura do núcleo
 
 - [`docs/arquitetura.md`](docs/arquitetura.md): como o código está organizado.
 - `docs/fase-0.md` a `docs/fase-5.md`: o que foi feito em cada fase, com decisões e termos técnicos explicados.
+- [`docs/calculos-na-tela.md`](docs/calculos-na-tela.md): ajuste pós-Fase 5, em que os cálculos passam a aparecer formatados na tela (o Markdown fica só para o arquivo salvo).
 - [`docs/exemplos/`](docs/exemplos/): relatórios salvos pelo programa (arquivos `.md`).
 - [`docs/ideias-futuras.md`](docs/ideias-futuras.md): ideias anotadas para depois do MVP.
 
