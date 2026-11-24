@@ -76,6 +76,12 @@ pytest --cov=financas.core --cov-report=term-missing     # cobertura do núcleo
 - [`docs/exemplos/`](docs/exemplos/): relatórios salvos pelo programa (arquivos `.md`).
 - [`docs/ideias-futuras.md`](docs/ideias-futuras.md): ideias anotadas para depois do MVP.
 
+## Apresentação do Sistema
+
+O sistema foi apresentado na Prefeitura de Montes Claros para alguns usuários.
+
+![Usuário testando o sistema](docs/imagens/teste_sistema_na_prefeitura.jpeg)
+
 ## Licença
 
 MIT. Veja [`LICENSE`](LICENSE).
